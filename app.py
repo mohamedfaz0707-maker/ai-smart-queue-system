@@ -127,6 +127,7 @@ def join_queue():
     }), 201
 
 
+initialize_database()
+
 if __name__ == "__main__":
-    initialize_database()
     app.run(debug=True)
