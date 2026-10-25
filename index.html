@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Queue Prediction System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px #cccccc;
+        }
+
+        h1 {
+            color: #173b68;
+        }
+
+        input, select, button {
+            width: 90%;
+            padding: 12px;
+            margin: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #1769aa;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #104d80;
+        }
+
+        .result {
+            background: #e8f3ff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+
+        #message {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>AI Smart Queue Prediction System</h1>
+        <p>Smart Queue Management and Waiting Time Prediction</p>
+
+        <h2>Join the Queue</h2>
+
+        <form id="queueForm">
+            <input type="text" id="name"
+                   placeholder="Enter your name" required>
+
+            <select id="service">
+                <option value="General">General Service</option>
+                <option value="Billing">Billing</option>
+                <option value="Enquiry">Enquiry</option>
+            </select>
+
+            <button type="submit">Join Queue</button>
+        </form>
+
+        <div class="result">
+            <h2>Your Queue Details</h2>
+            <p id="message">Join the queue to get your token.</p>
+            <p id="token"></p>
+            <p id="waiting"></p>
+            <p id="congestion"></p>
+        </div>
+
+        <h2>Current Queue Status</h2>
+        <button onclick="loadQueue()">Refresh Queue</button>
+        <div id="queueList">Loading queue...</div>
+    </div>
+
+    <script>
+        const API = "";
+
+        document.getElementById("queueForm")
+            .addEventListener("submit", async function(event) {
+                event.preventDefault();
+
+                const name = document.getElementById("name").value;
+                const service = document.getElementById("service").value;
+
+                try {
+                    const response = await fetch(`${API}/api/join`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ name, service })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || "Unable to join queue");
+                    }
+
+                    document.getElementById("message").textContent =
+                        data.message;
+                    document.getElementById("token").textContent =
+                        "Token Number: " + data.token;
+                    document.getElementById("waiting").textContent =
+                        "Estimated Waiting Time: " +
+                        data.estimated_wait_minutes + " minutes";
+                    document.getElementById("congestion").textContent =
+                        "Congestion Level: " + data.congestion;
+
+                    document.getElementById("name").value = "";
+
+                    loadQueue();
+                } catch (error) {
+                    document.getElementById("message").textContent =
+                        "Error: " + error.message +
+                        ". Check whether the backend is running.";
+                }
+            });
+
+        async function loadQueue() {
+            try {
+                const response = await fetch(`${API}/api/queue`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error("Unable to load queue");
+                }
+
+                const list = document.getElementById("queueList");
+
+                if (data.queue.length === 0) {
+                    list.textContent = "No customers in queue.";
+                    return;
+                }
+
+                list.replaceChildren();
+
+                data.queue.forEach(customer => {
+                    const item = document.createElement("p");
+                    item.textContent =
+                        "Token " + customer.token +
+                        " - " + customer.name +
+                        " - " + customer.service +
+                        " - " + customer.status;
+
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                document.getElementById("queueList").textContent =
+                    "Unable to connect to the backend.";
+            }
+        }
+
+        loadQueue();
+    </script>
+</body>
+</html>
